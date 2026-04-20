@@ -336,6 +336,36 @@ impl PositionThirdOrderStep1 {
         return_after_found: bool,
     ) {
         let j_max_j_max = j_max * j_max;
+
+        // Enumerate the exact symmetric jerk-only boundary profile before the generic root search.
+        if self.v0.abs() < f64::EPSILON
+            && self.a0.abs() < f64::EPSILON
+            && self.vf.abs() < f64::EPSILON
+            && self.af.abs() < f64::EPSILON
+        {
+            let t = (self.pd / (2.0 * j_max)).cbrt();
+
+            if t.is_finite() && t >= 0.0 {
+                let profile = &mut self.valid_profiles[self.current_index];
+                profile.t = [t, 0.0, t, 0.0, t, 0.0, t];
+
+                if profile.check_with_timing(
+                    ControlSigns::UDDU,
+                    ReachedLimits::None,
+                    j_max,
+                    v_max,
+                    v_min,
+                    a_max,
+                    a_min,
+                ) {
+                    self.add_profile();
+                    if return_after_found {
+                        return;
+                    }
+                }
+            }
+        }
+
         // NONE UDDU / UDUD Strategy: t7 == 0 (equals UDDU), this one is in particular prone to numerical issues
         let h2_none = (self.a0_a0 - self.af_af) / (2.0 * j_max) + (self.vf - self.v0);
         let h2_h2 = h2_none * h2_none;
