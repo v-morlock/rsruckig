@@ -284,6 +284,7 @@ impl<const DOF: usize, E: RuckigErrorHandler> Ruckig<DOF, E> {
         if !self.current_input_initialized || *input != self.current_input {
             self.calculate(input, &mut output.trajectory)?;
 
+            output.time = 0.0;
             output.new_calculation = true;
             self.current_input = input.clone();
             self.current_input_initialized = true;
